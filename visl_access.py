@@ -24,7 +24,7 @@ class WeekDays(Params):
 class ScheduleMaintArgs:
     def __init__(self,
             cmd: Commands = None,
-            registration_year: str = "2024",
+            registration_year: str = None,
             club: str = Params.ALL,
             season: str = Params.ALL,
             division: str = Params.ALL,
@@ -39,7 +39,6 @@ class ScheduleMaintArgs:
             day_of_week: str = Params.ALL,
             start_time: str = Params.ALL ):
         self.cmd = cmd
-        self.registration_year = registration_year
         self.club = club
         self.season = season
         self.division = division
@@ -53,6 +52,15 @@ class ScheduleMaintArgs:
         self.end_date = end_date
         self.day_of_week = day_of_week
         self.start_time = start_time
+
+        if registration_year is None:
+            today = datetime.date.today()
+            year = today.year
+            if today.month > 6:
+                year += 1
+            self.registration_year = str(year)
+        else:
+            self.registration_year = registration_year
 
     def get_response(self):
         request_dict = {
