@@ -90,7 +90,7 @@ class ScheduleMaintArgs:
             request_dict['cmd'] = self.cmd
         return requests.get(URL, params=request_dict)
 
-def _get_closest_match(search_item: str, options: list[str], function=str.capitalize):
+def _get_closest_match(search_item: str, options: list[str], function=str.title):
     cutoff = 0.1
     while cutoff <= 1.0001:
         matches = difflib.get_close_matches(search_item, options, cutoff=cutoff)
@@ -102,9 +102,8 @@ def _get_closest_match(search_item: str, options: list[str], function=str.capita
                 str.title: str.capitalize,
                 str.capitalize: str.upper,
                 str.upper: str.lower,
-                str.lower: None
             }
-            return _get_closest_match(function(search_item), options, function=next_function[function])
+            return _get_closest_match(function(search_item), options, function=next_function.get(function))
         if len(matches) > 1:
             cutoff += 0.1
             continue
