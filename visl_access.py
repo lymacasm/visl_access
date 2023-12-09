@@ -29,7 +29,7 @@ class ScheduleMaintArgs:
             season: str = Params.ALL,
             division: str = Params.ALL,
             pool: str = Params.ALL,
-            team_name: str = Params.ALL,
+            team_id: str = Params.ALL,
             schedule_type: str = Params.ALL,
             schedule_name: str = Params.ALL,
             schedule_status: str = Params.ALL,
@@ -43,7 +43,7 @@ class ScheduleMaintArgs:
         self.season = season
         self.division = division
         self.pool = pool
-        self.team_name = team_name
+        self.team_id = team_id
         self.schedule_type = schedule_type
         self.schedule_name = schedule_name
         self.schedule_status = schedule_status
@@ -69,7 +69,7 @@ class ScheduleMaintArgs:
             "season": self.season,
             "division": self.division,
             "sched_pool": self.pool,
-            "team_refno": self.team_name,
+            "team_refno": self.team_id,
             "stype": self.schedule_type,
             "sname": self.schedule_name,
             "sstat": self.schedule_status,
@@ -90,12 +90,21 @@ class ScheduleMaintArgs:
             request_dict['cmd'] = self.cmd
         return requests.get(URL, params=request_dict)
 
-def _get_closest_match(search_item: str, options: list[str]):
+def _get_closest_match(search_item: str, options: list[str], function=str.capitalize):
     cutoff = 0.1
     while cutoff <= 1.0001:
         matches = difflib.get_close_matches(search_item, options, cutoff=cutoff)
         if len(matches) == 0:
-            break
+            if function is None:
+                return
+
+            next_function = {
+                str.title: str.capitalize,
+                str.capitalize: str.upper,
+                str.upper: str.lower,
+                str.lower: None
+            }
+            return _get_closest_match(function(search_item), options, function=next_function[function])
         if len(matches) > 1:
             cutoff += 0.1
             continue
@@ -120,20 +129,15 @@ def _get_teams_in_division( division ):
                 teams[team_name] = team_refno
     return teams
 
+def get_team( team_name, division ):
+    teams = _get_teams_in_division(division)
+    found_team_name = _get_closest_match(team_name, list(teams.keys()))
+    if found_team_name is None:
+        raise NameError(f'Failed to find match for team name "{team_name}". Options: {", ".join(teams.keys())}')
+    print(f'Using team "{found_team_name}".')
+    return (found_team_name, teams[found_team_name])
+
 def get_csv_schedule( sched_args: ScheduleMaintArgs ):
-    if sched_args.team_name != Params.ALL:
-        # Verify division was passed in
-        if sched_args.division == Params.ALL:
-            raise ValueError("Division must be specified if team name is specified.")
-
-        # Get team code
-        teams = _get_teams_in_division(sched_args.division)
-        found_team_name = _get_closest_match(sched_args.team_name, list(teams.keys()))
-        if found_team_name is None:
-            raise Exception(f'Failed to find match for team name "{sched_args.team_name}". Options: {", ".join(teams.keys())}')
-        print(f'Using team "{found_team_name}".')
-        sched_args.team_name = teams[found_team_name]
-
     response = sched_args.get_response()
     response.raise_for_status()
     return response.text
