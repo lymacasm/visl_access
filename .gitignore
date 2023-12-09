@@ -1,2 +1,3 @@
 *.csv
 *.ics
+*__pycache__*

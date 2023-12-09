@@ -35,7 +35,7 @@ class ScheduleMaintArgs:
             schedule_status: str = Params.ALL,
             field_name: str = Params.ALL,
             start_date: datetime = datetime.date.today(),
-            end_date: datetime = datetime.date(2024, 3, 3),
+            end_date: datetime = datetime.date(9999, 12, 31),
             day_of_week: str = Params.ALL,
             start_time: str = Params.ALL ):
         self.cmd = cmd
