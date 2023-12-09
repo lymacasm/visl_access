@@ -95,7 +95,7 @@ def _get_closest_match(search_item: str, options: list[str], function=str.title)
     while cutoff <= 1.0001:
         matches = difflib.get_close_matches(search_item, options, cutoff=cutoff)
         if len(matches) == 0:
-            if function is None:
+            if function is None or not callable(function):
                 return
 
             next_function = {
