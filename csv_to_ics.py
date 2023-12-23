@@ -1,17 +1,20 @@
 import csv
 from ics import Calendar, Event
 from datetime import datetime
+from datetime import timedelta
+from calendar import WEDNESDAY
 import arrow
 import argparse
 from io import StringIO
 import visl_access as visl
 
-def _csv_to_ics(team_name, csv_reader, ics_out_path):
+def _csv_to_ics(team_name, csv_reader: csv.DictReader, ics_out_path):
     cal = Calendar()
     for row in csv_reader:
         if row["Time"][0] != " ":
             row["Time"] = " " + row["Time"]
         date = datetime.strptime(row["Date"] + row["Time"], "%Y-%m-%d %I:%M%p")
+        last_wednesday = date - timedelta(days=((date.weekday() - WEDNESDAY) % 7))
         date = arrow.get(date, "US/Pacific")
         if team_name.lower() in row["home_team"].lower():
             team = row["visit_team"]
@@ -19,7 +22,9 @@ def _csv_to_ics(team_name, csv_reader, ics_out_path):
         else:
             team = row["home_team"]
             home_status = "Away"
-        e = Event()
+        e = Event(uid=f'{row["sched_name_desc"].strip()}-{row["sched_type_desc"].strip()}-{row["division_name"].strip()}-{row["sched_agegroup"].strip()}-{row["sched_pool"]}-'
+                f'{row["visit_sched_pool"].strip()}-{row["home_cup_pool"].strip()}-{row["visit_cup_pool"].strip()}-{row["sched_status_desc"].strip()}-{row["home_team"].strip()}-'
+                f'{row["home_club"].strip()}-{row["visit_team"].strip()}-{row["visit_club"].strip()}-{row["game_no"].strip()}-{last_wednesday.strftime("%Y-%m-%d")}'.replace(" ", ""))
         e.name = f"{team} ({home_status})"
         e.begin = date
         e.location = row["field_name"]
