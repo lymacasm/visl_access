@@ -11,7 +11,7 @@ from typing import Union
 URL = "https://visl.org/webapps/spappz_live/schedule_maint"
 
 # Use caching for results
-requests_cache.install_cache("visl_access", expire_after=datetime.timedelta(hours=3))
+session = requests_cache.CachedSession("visl_access", expire_after=datetime.timedelta(hours=3))
 
 class Commands(StrEnum):
     CSV = "Excel"
@@ -96,7 +96,7 @@ class ScheduleMaintArgs:
         }
         if self.cmd is not None:
             request_dict['cmd'] = self.cmd
-        return requests.get(URL, params=request_dict)
+        return session.get(URL, params=request_dict)
 
 def _get_teams_in_division(division) -> dict[str, str]:
     # Get the page with teams
