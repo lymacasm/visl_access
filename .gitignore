@@ -1,3 +1,4 @@
 *.csv
 *.ics
 *__pycache__*
+*.sqlite
