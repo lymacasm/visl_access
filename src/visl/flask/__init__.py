@@ -34,17 +34,20 @@ def create_app(test_config=None):
     # hello world page
     @app.route("/team_sched", methods=["GET"])
     def get_team_sched():
+        # Grab all the main args
         team_name = request.args["team_name"]
         division = request.args["division"]
         clear_cache = request.args.get("clear_cache", False)
         response_type = request.args.get("response_type", ReturnTypes.json).lower()
 
+        # Parse out any extra filter args
         ignore_args = ["team_name", "division", "clear_cache", "response_type"]
         extra_args = {}
         for arg, val in request.args.items():
             if arg not in ignore_args:
                 extra_args[arg] = val
 
+        # Get the schedule
         team_name, team_refno = visl.get_team(team_name, division, clear_cache)
         args = visl.ScheduleMaintArgs(
             cmd=visl.Commands.CSV,
@@ -55,6 +58,7 @@ def create_app(test_config=None):
         )
         csv_data = visl.get_visl_csv(team_name, args)
 
+        # Return requested response type
         if response_type == ReturnTypes.json:
             return jsonify(csv_data.to_json_var())
         else:
