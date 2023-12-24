@@ -11,15 +11,20 @@ class VislCSV:
     def __init__(self, team_name, csv_file_handle, close_handle=False):
         self.team_name = team_name
 
+        self.__csv_raw_data = csv_file_handle.read()
+        csv_file_handle.seek(0)
+
         # Read in CSV file data, and filter out unnecessary data
         self.__csv_data = list(csv.DictReader(csv_file_handle))
         if close_handle:
             csv_file_handle.close()
-        for row in self.__csv_data:
+        for row in list(self.__csv_data):
             if '' in row and not row['']:
                 del row['']
+            for key, val in row.items():
+                row[key] = val.strip()
 
-    def to_ics(self):
+    def to_ics_var(self) -> Calendar:
         cal = Calendar()
         for row in self.__csv_data:
             # Get the date and time of the match, and the week (week determined by previous wednesday)
@@ -55,21 +60,36 @@ class VislCSV:
             cal.events.add(e)
         return cal
 
+    def to_ics(self) -> str:
+        cal = self.to_ics_var()
+        return cal.serialize()
+
     def to_ics_file(self, ics_file):
         # Convert to ics, and write to file
         cal = self.to_ics()
         with open(ics_file, 'w') as f:
-            f.writelines(cal.serialize_iter())
+            f.write(cal)
 
-    def to_json(self):
-        # CSV data is already in json/dict format, just return that
+    def to_json_var(self):
         return self.__csv_data
+
+    def to_json(self) -> str:
+        # CSV data is already in json/dict format, just return that
+        return json.dumps(self.__csv_data)
 
     def to_json_file(self, json_file):
         # Convert to JSON, and write to file
         json_var = self.to_json()
-        with open(json_file) as f:
+        with open(json_file, 'w') as f:
             f.write(json.dumps(json_var))
+
+    def to_csv(self) -> str:
+        return self.__csv_raw_data
+
+    def to_csv_file(self, csv_file):
+        csv_str = self.to_csv()
+        with open(csv_file, 'w') as f:
+            f.write(csv_str)
 
     def get(self, row, key):
         # Get the info for specified row
