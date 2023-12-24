@@ -1,5 +1,6 @@
 import datetime
 import requests
+import requests_cache
 from bs4 import BeautifulSoup
 from utility import get_closest_match
 from visl.csv import VislCSV
@@ -8,6 +9,9 @@ from strenum import StrEnum
 from typing import Union
 
 URL = "https://visl.org/webapps/spappz_live/schedule_maint"
+
+# Use caching for results
+requests_cache.install_cache("visl_access", expire_after=datetime.timedelta(hours=3))
 
 class Commands(StrEnum):
     CSV = "Excel"
