@@ -14,10 +14,10 @@ def csv_file_to_ics(team_name, csv_in_path, ics_out_path, division=None):
     # Save CSV data to ics file
     csv_data.to_ics_file(ics_out_path)
 
-def get_team_ics(team_name, division, ics_out_path):
+def get_team_ics(team_name, division, ics_out_path, clear_cache):
     # Get the CSV schedule for the team
-    (team_name, team_id) = visl.get_team(team_name, division)
-    args = visl.ScheduleMaintArgs(cmd=visl.Commands.CSV, team_id=team_id, division=division)
+    (team_name, team_id) = visl.get_team(team_name, division, clear_cache)
+    args = visl.ScheduleMaintArgs(cmd=visl.Commands.CSV, team_id=team_id, division=division, clear_cache=clear_cache)
     csv_data = visl.get_visl_csv(team_name, args)
 
     # Convert to ICS file
@@ -38,12 +38,13 @@ def main():
     visl_team_parser.add_argument("-t", "--team_name", required=True)
     visl_team_parser.add_argument("-d", "--division", required=True)
     visl_team_parser.add_argument("-i", "--ics_out_file", required=True)
+    visl_team_parser.add_argument("-x", "--clear_cache", action="store_true")
 
     args = parser.parse_args()
     if args.cmd == "csv":
         csv_file_to_ics(args.team_name, args.csv_in_file, args.ics_out_file, args.division)
     elif args.cmd == "visl_team":
-        get_team_ics(args.team_name, args.division, args.ics_out_file)
+        get_team_ics(args.team_name, args.division, args.ics_out_file, args.clear_cache)
 
 if __name__ == "__main__":
     main()

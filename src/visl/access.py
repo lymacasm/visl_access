@@ -45,7 +45,8 @@ class ScheduleMaintArgs:
             start_date: datetime = datetime.date.today(),
             end_date: datetime = datetime.date(9999, 12, 31),
             day_of_week: Union[Params, WeekDays] = Params.ALL,
-            start_time: Union[str, Params] = Params.ALL ):
+            start_time: Union[str, Params] = Params.ALL,
+            clear_cache = False ):
         self.cmd = str(cmd)
         self.club = str(club)
         self.season = str(season)
@@ -60,6 +61,7 @@ class ScheduleMaintArgs:
         self.end_date = end_date
         self.day_of_week = str(day_of_week)
         self.start_time = str(start_time)
+        self.__clear_cache = clear_cache
 
         if registration_year is None:
             today = datetime.date.today()
@@ -96,11 +98,12 @@ class ScheduleMaintArgs:
         }
         if self.cmd is not None:
             request_dict['cmd'] = self.cmd
-        return session.get(URL, params=request_dict)
 
-def _get_teams_in_division(division) -> dict[str, str]:
+        return session.get(URL, params=request_dict, force_refresh=self.__clear_cache)
+
+def _get_teams_in_division(division: str, clear_cache = False) -> dict[str, str]:
     # Get the page with teams
-    division_args = ScheduleMaintArgs(division=str(division))
+    division_args = ScheduleMaintArgs(division=str(division), clear_cache=clear_cache)
     division_response = division_args._get_response()
     division_response.raise_for_status()
 
@@ -116,8 +119,8 @@ def _get_teams_in_division(division) -> dict[str, str]:
                 teams[team_name] = team_refno
     return teams
 
-def get_team(team_name: str, division: str) -> tuple[str, str]:
-    teams = _get_teams_in_division(division)
+def get_team(team_name: str, division: str, clear_cache = False) -> tuple[str, str]:
+    teams = _get_teams_in_division(division, clear_cache)
     found_team_name = get_closest_match(team_name, list(teams.keys()))
     if found_team_name is None:
         raise NameError(f'Failed to find match for team name "{team_name}". Options: {", ".join(teams.keys())}')
