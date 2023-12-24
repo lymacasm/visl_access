@@ -6,7 +6,7 @@ import visl.access as visl
 import time
 from flask import Flask, request, send_file, jsonify
 
-class ReturnTypes(StrEnum):
+class ResponseTypes(StrEnum):
     csv = auto()
     ics = auto()
     json = auto()
@@ -38,7 +38,7 @@ def create_app(test_config=None):
         team_name = request.args["team_name"]
         division = request.args["division"]
         clear_cache = request.args.get("clear_cache", False)
-        response_type = request.args.get("response_type", ReturnTypes.json).lower()
+        response_type = request.args.get("response_type", ResponseTypes.json).lower()
 
         # Parse out any extra filter args
         ignore_args = ["team_name", "division", "clear_cache", "response_type"]
@@ -59,7 +59,7 @@ def create_app(test_config=None):
         csv_data = visl.get_visl_csv(team_name, args)
 
         # Return requested response type
-        if response_type == ReturnTypes.json:
+        if response_type == ResponseTypes.json:
             return jsonify(csv_data.to_json_var())
         else:
             fname = os.path.join(app.instance_path, f"get_team_sched_{str(time.time()).replace('.', '')}.{response_type}")
