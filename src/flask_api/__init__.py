@@ -52,7 +52,7 @@ def create_app(test_config=None):
         args = visl.ScheduleMaintArgs(
             cmd=visl.Commands.CSV,
             team_id=team_refno,
-            division=division,
+            division="div_filter_bypass", # By using non-empty string that doesn't match division here, we can bypass the division filter, and pull both cup games and league games
             clear_cache=clear_cache,
             **extra_args
         )
