@@ -1,6 +1,11 @@
 import difflib
 
 def get_closest_match(search_item: str, options: list[str], function=str.title):
+    # Cover trivial case
+    if search_item in options:
+        return search_item
+
+    # Use difflib to find closest match
     cutoff = 0.1
     while cutoff <= 1.0001:
         matches = difflib.get_close_matches(search_item, options, cutoff=cutoff)

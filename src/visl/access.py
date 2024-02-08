@@ -101,31 +101,64 @@ class ScheduleMaintArgs:
 
         return session.get(URL, params=request_dict, force_refresh=self.__clear_cache)
 
-def _get_teams_in_division(division: str, clear_cache = False) -> dict[str, str]:
-    # Get the page with teams
-    division_args = ScheduleMaintArgs(division=str(division), clear_cache=clear_cache)
-    division_response = division_args._get_response()
-    division_response.raise_for_status()
+def _get_dropdown_options(request_args: ScheduleMaintArgs, dropdown_name) -> dict[str, str]:
+    # Get the schedules page
+    response = request_args._get_response()
+    response.raise_for_status()
 
     # Parse the page
-    page_soup = BeautifulSoup(division_response.text, features="lxml")
-    teams = {}
-    team_options = page_soup.find("select", {"name": "team_refno"})
-    for team_option in team_options.children:
-        if team_option.text.strip() and team_option.text != Params.ALL:
-            team_name = team_option.text
-            team_refno = team_option.get("value")
-            if team_refno is not None:
-                teams[team_name] = team_refno
-    return teams
+    page_soup = BeautifulSoup(response.text, features="lxml")
+    dropdown_items = {}
+    dropdown_options = page_soup.find("select", {"name": dropdown_name})
+    for dropdown_option in dropdown_options.children:
+        if dropdown_option.text.strip() and dropdown_option.text != Params.ALL:
+            option_name = dropdown_option.text.strip()
+            option_value = dropdown_option.get("value")
+            if option_value is not None:
+                dropdown_items[option_name] = option_value
+    return dropdown_items
+
+def _get_divisions(clear_cache = False) -> dict[str, str]:
+    return _get_dropdown_options(ScheduleMaintArgs(clear_cache=clear_cache), "division")
+
+def _get_teams_in_division(division: str, clear_cache = False) -> dict[str, str]:
+    return _get_dropdown_options(ScheduleMaintArgs(division=str(division), clear_cache=clear_cache), "team_refno")
+
+def _get_clubs(clear_cache = False) -> dict[str, str]:
+    return _get_dropdown_options(ScheduleMaintArgs(clear_cache=clear_cache), "flt_area")
 
 def get_team(team_name: str, division: str, clear_cache = False) -> tuple[str, str]:
-    teams = _get_teams_in_division(division, clear_cache)
+    # Get division
+    divisions = _get_divisions(clear_cache)
+    if division in list(divisions.values()):
+        # Division is in list of values, just use that (can use div#'s more easily this way as input)
+        division_id = division
+        print(f'Using division "{division_id}".')
+    else:
+        # Division not in list of values, find a match on division names
+        found_division_name = get_closest_match(division, list(divisions.keys()))
+        if found_division_name is None:
+            raise NameError(f'Failed to find match for division "{division}". Options: {", ".join(divisions.keys())}')
+        print(f'Using division "{found_division_name}".')
+
+        # Grab division id from name
+        division_id = divisions[found_division_name]
+
+    # Get team in division
+    teams = _get_teams_in_division(division_id, clear_cache)
     found_team_name = get_closest_match(team_name, list(teams.keys()))
     if found_team_name is None:
         raise NameError(f'Failed to find match for team name "{team_name}". Options: {", ".join(teams.keys())}')
     print(f'Using team "{found_team_name}".')
     return (found_team_name, teams[found_team_name])
+
+def get_club(club_name: str, clear_cache = False) -> tuple[str, str]:
+    clubs = _get_clubs(clear_cache)
+    found_club_name = get_closest_match(club_name, list(clubs.keys()))
+    if found_club_name is None:
+        raise NameError(f'Failed to find match for club name "{club_name}". Options: {", ".join(clubs.keys())}')
+    print(f'Using club "{found_club_name}".')
+    return (found_club_name, clubs[found_club_name])
 
 def get_csv_str(sched_args: ScheduleMaintArgs) -> str:
     response = sched_args._get_response()
